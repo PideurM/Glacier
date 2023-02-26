@@ -1,0 +1,126 @@
+
+   
+   let data_default = FileAttachment("departements-version-simplifiee.geojson").json({typed : true});
+
+    let data_clear = data_default.features;
+
+    let glacier_default = FileAttachment("glacier.csv").csv({typed : true});
+
+    let glacier_clear = glacier_default.filter( d => d.POLITICAL_UNIT === "FR" && d.LATITUDE !== null && d.LONGITUDE !== null && d.GEN_LOCATION !== null);
+
+    let list_NAME_mass = [...d3.group(mass_clear, d => d.NAME)].map(d => d[0])
+
+    let list_NAME = [...d3.group(glacier_clear, d=> d.NAME)].map(d => d[0]);
+
+    let list_NO_DATA = list_NAME.filter(d => !list_NAME_mass.includes(d));
+
+
+    let projection = d3.geoConicConformal().center([2.454071 , 46.279229]).scale(2800);
+    
+    let path = d3.geoPath().projection(projection);
+    
+    const height = 600;
+    const max_zoom = 16
+  
+    
+    const zoom = d3.zoom()
+        .scaleExtent([1, max_zoom])
+        .on("zoom", zoomed);
+    
+    let svg = d3.select("#my_map")
+        .append("svg")
+        .attr("viewBox", [0, 0, width, height]);
+      
+  
+    let g = svg.append("g");
+    
+    g.selectAll("path")
+      .data(data_clear)
+      .join("path")
+      .attr("d", path)
+      .style("fill", function (d) {
+        var value = d.geometry.coordinates;
+        return '#ddd'
+      })
+      .attr("stroke", "#ffffff");
+  
+  
+    var tooltip = d3.select("body").append("div")
+                    .attr("class", "hidden tooltip");
+    
+    const glacierElements = g.selectAll("g")
+    .data(glacier_clear)
+    .join('g');
+  
+    const glacierGroups = glacierElements
+      .append('g')
+      .attr('transform',
+           ({LONGITUDE, LATITUDE}) =>
+            `translate(${projection([LONGITUDE, LATITUDE]).join(",")})`
+           );
+  
+    svg.call(zoom);
+    
+  glacierGroups
+    .append('circle')
+    .attr('r', 3)
+    .attr('fill',d=>{
+        if (list_NO_DATA.includes(d.NAME)) {
+          return "red";
+        }
+        else {
+          return "black";
+        }
+                  })
+    
+    .on('mouseenter', (e,d) => {
+      d3.selectAll("circle")
+        .attr("opacity", .2);
+  
+      d3.select(e.target)
+        .attr("fill", "blue")
+        .attr("opacity", 1);
+  
+      var mousePosition = [e.x, e.y];
+          // on affiche le toolip
+      tooltip.classed('hidden', false)
+        // on positionne le tooltip en fonction de la position de la souris
+              .attr('style', 'left:' + (mousePosition[0] + 15) +
+                    'px; top:' + (mousePosition[1] - 35) + 'px')
+      // on recupere le nom du departement et la value
+              .text(d.NAME)
+                  
+    })
+    .on('mouseleave', d =>{
+      
+      tooltip.classed('hidden', true);
+      d3.selectAll("circle")
+        .attr('fill',d=>{
+        if (list_NO_DATA.includes(d.NAME)) {
+          return "red";
+        }
+        else {
+          return "black";
+        }
+                  })
+        .attr("opacity", 1)
+    });
+  
+    
+  //glacierGroups
+      //.append('text')
+      //.attr('font-family', 'sans-serif')
+      //.attr('font-size', 10)
+      //.attr('text-anchor', 'middle')
+      //.attr('y', -6)
+      //.text(({ NAME }) => NAME);
+  
+      function zoomed(event) {
+      const {transform} = event;
+      g.attr("transform", transform);
+      g.attr("stroke-width", 1 / transform.k);
+      d3.selectAll('circle')
+        .attr('r',(3 + 3*(transform.k-1)/(max_zoom-1)) / transform.k)
+    }
+  
+    return svg.node()
