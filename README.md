@@ -4,7 +4,7 @@ Le but de ce projet est d'utiliser les outils de visualisation de données d3 à
 
 # Premier prototypage
 
-- Prototypage papier : [Prototypage-papier.pdf](Prototypage-papier - 1.pdf)
+- Prototypage papier : [Prototypage-papier.pdf](https://github.com/PideurM/pideurm.github.io/blob/1fa1c4eab30f82104823b3313358f39110251876/Prototypage-papier%20-%201.pdf)
 
 # Technologies utilisées
 
